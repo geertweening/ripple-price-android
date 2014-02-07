@@ -97,7 +97,8 @@ public class MainActivity extends ActionBarActivity implements ActionBar.TabList
         // tab selected
         xrpBase = (Integer) tab.getTag(); Fragment fragment = mSectionsPagerAdapter.getItem(0);
         if (fragment != null && fragment instanceof CurrencyFragment) {
-            ((CurrencyFragment) fragment).update(); mSectionsPagerAdapter.notifyDataSetChanged();
+            ((CurrencyFragment) fragment).update();
+            mSectionsPagerAdapter.notifyDataSetChanged();
         }
     }
 

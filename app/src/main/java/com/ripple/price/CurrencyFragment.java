@@ -12,9 +12,6 @@ import android.widget.TextView;
 
 import com.ripple.price.util.Log;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,8 +28,8 @@ public class CurrencyFragment extends Fragment implements Observer
 
     ExpandableListAdapter listAdapter;
     ExpandableListView expListView;
-    List<JSONObject> listDataHeader;
-    HashMap<Integer, List<String>> listDataChild;
+    List<String> listDataHeader = new ArrayList<String>();
+    Map<String, List<PriceManager.CurrencyRate>> listDataChild = new HashMap<String, List<PriceManager.CurrencyRate>>();
 
     public static CurrencyFragment newInstance()
     {
@@ -59,9 +56,6 @@ public class CurrencyFragment extends Fragment implements Observer
     public void onViewCreated(View view, Bundle savedInstanceState)
     {
         super.onViewCreated(view, savedInstanceState);
-
-        // preparing list data
-        prepareListData();
 
         listAdapter = new ExpandableListAdapter(getActivity(), listDataHeader, listDataChild);
 
@@ -115,49 +109,10 @@ public class CurrencyFragment extends Fragment implements Observer
         });
     }
 
-    /*
-   * Preparing the list data
-   */
-    private void prepareListData()
-    {
-        listDataHeader = new ArrayList<JSONObject>();
-        listDataChild = new HashMap<Integer, List<String>>();
-
-        try {
-            JSONObject xrpUsd = new JSONObject("{'base': {'currency': 'XRP'},'trade': {'currency': 'USD','issuer': 'rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B'},'rate': 0.0203400926139021}");
-            listDataHeader.add(xrpUsd);
-            listDataHeader.add(xrpUsd);
-            listDataHeader.add(xrpUsd);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        // Adding child data
-        List<String> subList = new ArrayList<String>();
-        subList.add("Bitstamp");
-        subList.add("RippleCN");
-        subList.add("TheRock");
-        subList.add("ChrisWhen");
-
-        listDataChild.put(0, subList); // Header, Child data
-        listDataChild.put(1, subList);
-        listDataChild.put(2, subList);
-        listDataChild.put(3, subList);
-        listDataChild.put(4, subList);
-    }
-
     public void update()
     {
         if (listAdapter != null) {
-            getActivity().runOnUiThread(new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    listAdapter.notifyDataSetChanged();
-                }
-            });
-
+            listAdapter.notifyDataSetChanged();
         }
     }
 
@@ -169,12 +124,23 @@ public class CurrencyFragment extends Fragment implements Observer
             Map<String, List<PriceManager.CurrencyRate>> currencyRates = PriceManager.instance.getCurrencyRates();
 
             if (currencyRates != null && currencyRates.size() > 0) {
+
+                listDataHeader.clear();
+                listDataChild.clear();
+                Log.debug("cleaning list");
+
                 for (Map.Entry<String, List<PriceManager.CurrencyRate>> entry : currencyRates.entrySet()) {
                     Log.debug("= %s =", entry.getKey());
+
+                    listDataHeader.add(0, entry.getKey());
+
                     for (PriceManager.CurrencyRate rate : entry.getValue()) {
                         Log.debug("- %s - %s : %s (%s)", rate.base, rate.trade, rate.issuer, rate.rate);
+                        listDataChild.put(entry.getKey(), entry.getValue());
                     }
                 }
+
+                listAdapter.notifyDataSetChanged();
             }
         }
     }
@@ -193,10 +159,10 @@ public class CurrencyFragment extends Fragment implements Observer
     {
 
         private Context _context;
-        private List<JSONObject> _listDataHeader;
-        private HashMap<Integer, List<String>> _listDataChild;
+        private List<String> _listDataHeader;
+        private Map<String, List<PriceManager.CurrencyRate>> _listDataChild;
 
-        public ExpandableListAdapter(Context context, List<JSONObject> listDataHeader, HashMap<Integer, List<String>> listChildData)
+        public ExpandableListAdapter(Context context, List<String> listDataHeader, Map<String, List<PriceManager.CurrencyRate>> listChildData)
         {
             this._context = context;
             this._listDataHeader = listDataHeader;
@@ -204,9 +170,9 @@ public class CurrencyFragment extends Fragment implements Observer
         }
 
         @Override
-        public Object getChild(int groupPosition, int childPosititon)
+        public Object getChild(int groupPosition, int childPosition)
         {
-            return this._listDataChild.get(groupPosition).get(childPosititon);
+            return this._listDataChild.get(_listDataHeader.get(groupPosition)).get(childPosition);
         }
 
         @Override
@@ -218,29 +184,26 @@ public class CurrencyFragment extends Fragment implements Observer
         @Override
         public View getChildView(int groupPosition, final int childPosition, boolean isLastChild, View convertView, ViewGroup parent)
         {
-
-            System.out.println("getChildView for " + groupPosition);
-
-            final String childText = (String) getChild(groupPosition, childPosition);
+            final PriceManager.CurrencyRate childRate = (PriceManager.CurrencyRate) getChild(groupPosition, childPosition);
 
             if (convertView == null) {
-                LayoutInflater infalInflater = (LayoutInflater) this._context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                convertView = infalInflater.inflate(R.layout.list_item, null);
+                LayoutInflater inflater = (LayoutInflater) this._context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                convertView = inflater.inflate(R.layout.list_item, null);
             }
 
             TextView txtListChild = (TextView) convertView.findViewById(R.id.textLeft);
 
             TextView txtListChildRight = (TextView) convertView.findViewById(R.id.textRight);
 
-            txtListChild.setText(childText);
-            txtListChildRight.setText(childText);
+            txtListChild.setText(childRate.issuer);
+            txtListChildRight.setText(childRate.rate);
             return convertView;
         }
 
         @Override
         public int getChildrenCount(int groupPosition)
         {
-            return this._listDataChild.get(groupPosition).size();
+            return _listDataChild.get(this._listDataHeader.get(groupPosition)).size();
         }
 
         @Override
@@ -264,33 +227,28 @@ public class CurrencyFragment extends Fragment implements Observer
         @Override
         public View getGroupView(int groupPosition, boolean isExpanded, View convertView, ViewGroup parent)
         {
-            try {
+            boolean xrpBase = ((MainActivity) _context).getXrpBase() == 0;
 
-                boolean xrpBase = ((MainActivity) _context).getXrpBase() == 0;
+            String currency = (String) getGroup(groupPosition);
+            PriceManager.CurrencyRate rate = (PriceManager.CurrencyRate) getChild(groupPosition, 0);
 
-                JSONObject object = (JSONObject) getGroup(groupPosition);
-                String baseCurrency = object.getJSONObject("base").getString("currency");
-                String tradeCurrency = object.getJSONObject("trade").getString("currency");
-                String rate = object.getString("rate");
-                String headerTitle = "1 " + (xrpBase ? baseCurrency : tradeCurrency);
-                if (convertView == null) {
-                    LayoutInflater infalInflater = (LayoutInflater) this._context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                    convertView = infalInflater.inflate(R.layout.list_group, null);
-                }
-
-                TextView headerTextLeft = (TextView) convertView.findViewById(R.id.headerTextLeft);
-                TextView headerTextRight = (TextView) convertView.findViewById(R.id.headerTextRight);
-                headerTextLeft.setText(headerTitle);
-
-                String showRate = xrpBase ? rate : String.valueOf(1 / Double.valueOf(rate));
-                headerTextRight.setText(showRate + " " + (xrpBase ? tradeCurrency : baseCurrency));
-
-            } catch (JSONException e) {
-                e.printStackTrace();
+            String baseCurrency = rate.base;
+            String tradeCurrency = rate.trade;
+            String showRate = rate.rate;
+            String headerTitle = "1 " + (xrpBase ? baseCurrency : tradeCurrency);
+            if (convertView == null) {
+                LayoutInflater inflater = (LayoutInflater) this._context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                convertView = inflater.inflate(R.layout.list_group, null);
             }
 
-            return convertView;
+            TextView headerTextLeft = (TextView) convertView.findViewById(R.id.headerTextLeft);
+            TextView headerTextRight = (TextView) convertView.findViewById(R.id.headerTextRight);
+            headerTextLeft.setText(headerTitle);
 
+            String showThisRate = xrpBase ? showRate : String.valueOf(1 / Double.valueOf(showRate));
+            headerTextRight.setText(showThisRate + " " + (xrpBase ? tradeCurrency : baseCurrency));
+
+            return convertView;
         }
 
         @Override
