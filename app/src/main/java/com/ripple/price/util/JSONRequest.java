@@ -1,6 +1,5 @@
 package com.ripple.price.util;
 
-import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.NetworkResponse;
 import com.android.volley.ParseError;
 import com.android.volley.Request;
@@ -25,7 +24,6 @@ public class JSONRequest extends Request<JSONObject>
     {
         super(method, url, errorListener);
         mListener = listener;
-        setRetryPolicy(new DefaultRetryPolicy(30, 1, 1f));
     }
 
     @Override public Response<JSONObject> parseNetworkResponse(NetworkResponse response)

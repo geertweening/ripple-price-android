@@ -21,6 +21,24 @@ public class PriceManager
 {
     public static PriceManager instance;
 
+    private static String[] CURRENCIES_LIST = {"USD", "CNY", "EUR", "BTC", "LTC", "NMC"};
+    private static String[] GATEWAY_NAMES = {
+            "rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B", //:  "Bitstamp",
+//            "razqQKzJRdB4UxFPWf5NEpEG3WMkmwgcXA", //: "RippleChina",
+//            "rnuF96W4SZoCJmbHYBFoJZpR8eCaxNvekK", //: "RippleCN",
+//            "rNPRNzBB92BVpAhhZr4iXDTveCgV5Pofm9", //: "RippleIsrael",
+//            "rMwjYedjc7qqtKYVLiAccJSmCwih4LnE2q", //: "SnapSwap",
+//            "rLEsXccBGNR3UPuPu2hUXPjziKC3qKSBun", //: "The Rock",
+//            "rPDXxSZcuVL3ZWoyU82bcde3zwvmShkRyF", //: "WisePass",
+//            "rfYv1TXnwgDDK4WQNbFALykYuEBnrR4pDX", //: "Div. Rippler",
+//            "rGwUWgN5BEg3QGNY3RX2HfYowjUTZdid3E", //: "TTBit",
+//            "r3ADD8kXSUKHd6zTCKfnKT3zV9EZHjzp1S", //: "Ripple Union",
+//            "rkH1aQbL2ajA7HUsx8VQRuL3VaEByHELm", //:  "Ripple Money",
+//            "rJHygWcTLVpSXkowott6kzgZU6viQSVYM1", //: "Justcoin",
+//            "rM8199qFwspxiWNZRChZdZbGN5WrCepVP1", //: "XRP China",
+//            "ra9eZxMbJrUcgV8ui7aPc161FgrqWScQxV", //: "Peercover"
+    };
+
     private Context context;
     private Handler bgHandler;
     private final static String EXCHANGE_RATES_API = "http://ct.ripple.com:5993/api/exchangeRates";
@@ -62,30 +80,42 @@ public class PriceManager
 
     private void getExchangeRates()
     {
+        for (String currency : CURRENCIES_LIST) {
+            getExchangeRates(currency);
+        }
+    }
+
+    private void getExchangeRates(final String currency)
+    {
         try {
             JSONObject payLoad = new JSONObject();
             JSONArray currencies = new JSONArray();
-            currencies.put("USD");
+            currencies.put(currency);
             currencies.put("XRP");
             payLoad.put("currencies", currencies);
 
             JSONArray gateways = new JSONArray();
-            gateways.put("rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B");
+            for (String gateway : GATEWAY_NAMES) {
+                gateways.put(gateway);
+            }
+
             payLoad.put("gateways", gateways);
 
+            Log.debug("exchangeRate %s - %s", currency, gateways);
 
             JSONArrayRequest request = new JSONArrayRequest(EXCHANGE_RATES_API, payLoad, new Response.Listener<JSONArray>()
             {
                 @Override
                 public void onResponse(JSONArray jsonObject)
                 {
-                    Log.debug(jsonObject);
+                    Log.debug("response for %s: %s", currency, jsonObject);
                 }
             }, new Response.ErrorListener()
             {
                 @Override
                 public void onErrorResponse(VolleyError volleyError)
                 {
+                    Log.error("error for %s", currency);
                     Log.error(volleyError);
                 }
             }
@@ -95,7 +125,7 @@ public class PriceManager
 
 
         } catch (JSONException e) {
-            return;
+            Log.error(e);
         }
 
     }
