@@ -6,7 +6,7 @@ package com.ripple.price.util;
 public class Log
 {
     private final static String TAG = "ripple_price";
-    public static enum Level {
+    private static enum Level {
         DEBUG, INFO, ERROR
     };
 
@@ -60,17 +60,17 @@ public class Log
 
     public static void debug(Throwable t)
     {
-        log(Level.DEBUG, "%-E", t);
+        android.util.Log.d(TAG, "exception", t);
     }
 
     public static void info(Throwable t)
     {
-        log(Level.INFO, "%-e", t);
+        android.util.Log.i(TAG, "exception", t);
     }
 
     public static void error(Throwable t)
     {
-        log(Level.ERROR, "%-E", t);
+        android.util.Log.e(TAG, "exception", t);
     }
 
 }
