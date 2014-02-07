@@ -7,6 +7,7 @@ import android.os.Looper;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.ripple.price.util.JSONArrayRequest;
+import com.ripple.price.util.Log;
 import com.ripple.price.util.RippleVolley;
 
 import org.json.JSONArray;
@@ -78,14 +79,14 @@ public class PriceManager
                 @Override
                 public void onResponse(JSONArray jsonObject)
                 {
-                    System.out.println("response: " + jsonObject.toString());
+                    Log.debug(jsonObject);
                 }
             }, new Response.ErrorListener()
             {
                 @Override
                 public void onErrorResponse(VolleyError volleyError)
                 {
-                    System.out.println("response error: " + volleyError.toString());
+                    Log.error(volleyError);
                 }
             }
             );
