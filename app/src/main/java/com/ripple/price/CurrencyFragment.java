@@ -10,18 +10,23 @@ import android.widget.BaseExpandableListAdapter;
 import android.widget.ExpandableListView;
 import android.widget.TextView;
 
+import com.ripple.price.util.Log;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
 
 /**
  * Created by Geert Weening (geert@ripple.com) on 2/5/14.
  */
 
-public class CurrencyFragment extends Fragment
+public class CurrencyFragment extends Fragment implements Observer
 {
 
     ExpandableListAdapter listAdapter;
@@ -34,6 +39,13 @@ public class CurrencyFragment extends Fragment
         CurrencyFragment fragment = new CurrencyFragment();
         Bundle args = new Bundle();
         return fragment;
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+        PriceManager.instance.addObserver(this);
     }
 
     @Override
@@ -61,8 +73,7 @@ public class CurrencyFragment extends Fragment
         {
 
             @Override
-            public boolean onGroupClick(ExpandableListView parent, View v,
-                                        int groupPosition, long id)
+            public boolean onGroupClick(ExpandableListView parent, View v, int groupPosition, long id)
             {
                 // Toast.makeText(getApplicationContext(),
                 // "Group Clicked " + listDataHeader.get(groupPosition),
@@ -138,7 +149,8 @@ public class CurrencyFragment extends Fragment
     public void update()
     {
         if (listAdapter != null) {
-            getActivity().runOnUiThread( new Runnable() {
+            getActivity().runOnUiThread(new Runnable()
+            {
                 @Override
                 public void run()
                 {
@@ -146,6 +158,24 @@ public class CurrencyFragment extends Fragment
                 }
             });
 
+        }
+    }
+
+    @Override
+    public void update(Observable observable, Object o)
+    {
+        Log.debug("updated in CurrencyFragment");
+        if (observable instanceof PriceManager) {
+            Map<String, List<PriceManager.CurrencyRate>> currencyRates = PriceManager.instance.getCurrencyRates();
+
+            if (currencyRates != null && currencyRates.size() > 0) {
+                for (Map.Entry<String, List<PriceManager.CurrencyRate>> entry : currencyRates.entrySet()) {
+                    Log.debug("= %s =", entry.getKey());
+                    for (PriceManager.CurrencyRate rate : entry.getValue()) {
+                        Log.debug("- %s - %s : %s (%s)", rate.base, rate.trade, rate.issuer, rate.rate);
+                    }
+                }
+            }
         }
     }
 
@@ -166,8 +196,7 @@ public class CurrencyFragment extends Fragment
         private List<JSONObject> _listDataHeader;
         private HashMap<Integer, List<String>> _listDataChild;
 
-        public ExpandableListAdapter(Context context, List<JSONObject> listDataHeader,
-                                     HashMap<Integer, List<String>> listChildData)
+        public ExpandableListAdapter(Context context, List<JSONObject> listDataHeader, HashMap<Integer, List<String>> listChildData)
         {
             this._context = context;
             this._listDataHeader = listDataHeader;
@@ -177,8 +206,7 @@ public class CurrencyFragment extends Fragment
         @Override
         public Object getChild(int groupPosition, int childPosititon)
         {
-            return this._listDataChild.get(groupPosition)
-                    .get(childPosititon);
+            return this._listDataChild.get(groupPosition).get(childPosititon);
         }
 
         @Override
@@ -196,8 +224,7 @@ public class CurrencyFragment extends Fragment
             final String childText = (String) getChild(groupPosition, childPosition);
 
             if (convertView == null) {
-                LayoutInflater infalInflater = (LayoutInflater) this._context
-                        .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                LayoutInflater infalInflater = (LayoutInflater) this._context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 convertView = infalInflater.inflate(R.layout.list_item, null);
             }
 
