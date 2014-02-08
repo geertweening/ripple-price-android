@@ -1,28 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:paddingTop="12dp"
-    android:paddingBottom="12dp"
-    android:paddingLeft="8dp"
-    android:paddingRight="8dp">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="fill_parent"
+              android:layout_height="wrap_content"
+              android:orientation="horizontal"
+              android:paddingTop="12dp"
+              android:paddingBottom="12dp"
+              android:paddingLeft="8dp"
+              android:background="#fff4f4f4"
+              android:paddingRight="8dp">
 
     <TextView
-        android:id="@+id/headerTextLeft"
-        android:layout_width="wrap_content"
+        android:id="@+id/base"
+        android:layout_width="60dp"
+        android:layout_weight="1"
         android:layout_height="wrap_content"
-        android:paddingLeft="?android:attr/expandableListPreferredItemPaddingLeft"
+        android:layout_centerVertical="true"
         android:layout_alignParentLeft="true"
-        android:textSize="20sp" />
+        android:text="XRP"
+        android:paddingLeft="28dp"
+        android:layout_gravity="left|center_vertical"
+        android:textSize="16sp"/>
 
-    <TextView
-        android:id="@+id/headerTextRight"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_toRightOf="@+id/headerTextLeft"
-        android:paddingLeft="?android:attr/expandableListPreferredItemPaddingLeft"
-        android:layout_alignParentRight="true"
-        android:textSize="20sp" />
+    <RelativeLayout
+        android:layout_width="0dp"
+        android:layout_weight="3"
+        android:layout_height="wrap_content">
 
-</RelativeLayout>
+        <TextView
+            android:id="@+id/trade"
+            android:layout_width="60dp"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:text="USD"
+            android:paddingRight="8dp"
+            android:layout_gravity="left"
+            android:textSize="20sp"/>
+
+        <TextView
+            android:id="@+id/rate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@+id/trade"
+            android:text="$ 0.0212345"
+            android:layout_gravity="left"
+            android:textSize="18sp"
+
+            />
+
+        <TextView
+            android:id="@+id/trend"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toRightOf="@+id/trade"
+            android:layout_below="@+id/rate"
+            android:text="^ 0.0314%"
+            android:textColor="#ff0ec106"
+            android:layout_gravity="left"
+            android:textSize="14sp"
+            />
+
+        <TextView
+            android:id="@+id/issuer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/rate"
+            android:layout_toRightOf="@+id/trend"
+            android:paddingLeft="8dp"
+            android:text="Bitstamp"
+            android:textColor="#ffa0a0a0"
+            android:layout_gravity="left"
+            android:textSize="14sp"
+            />
+
+    </RelativeLayout>
+
+</LinearLayout>

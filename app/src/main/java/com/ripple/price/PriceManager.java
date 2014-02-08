@@ -56,9 +56,9 @@ public class PriceManager extends Observable
         public String base;
         public String trade;
         public String issuer;
-        public String rate;
+        public Double rate;
 
-        public CurrencyRate(String base, String trade, String issuer, String rate)
+        public CurrencyRate(String base, String trade, String issuer, Double rate)
         {
             this.base = base;
             this.trade = trade;
@@ -199,7 +199,7 @@ public class PriceManager extends Observable
             JSONObject base = object.getJSONObject("base");
             JSONObject trade = object.getJSONObject("trade");
 
-            String rate = object.getString("rate");
+            Double rate = object.getDouble("rate");
 
             String baseCurrency = base.getString("currency");
             String tradeCurrency = trade.getString("currency");

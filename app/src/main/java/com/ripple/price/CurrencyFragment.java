@@ -196,7 +196,7 @@ public class CurrencyFragment extends Fragment implements Observer
             TextView txtListChildRight = (TextView) convertView.findViewById(R.id.textRight);
 
             txtListChild.setText(childRate.issuer);
-            txtListChildRight.setText(childRate.rate);
+            txtListChildRight.setText(String.format("%.9f", childRate.rate));
             return convertView;
         }
 
@@ -228,25 +228,33 @@ public class CurrencyFragment extends Fragment implements Observer
         public View getGroupView(int groupPosition, boolean isExpanded, View convertView, ViewGroup parent)
         {
             boolean xrpBase = ((MainActivity) _context).getXrpBase() == 0;
+            PriceManager.CurrencyRate currencyRate = (PriceManager.CurrencyRate) getChild(groupPosition, 0);
 
-            String currency = (String) getGroup(groupPosition);
-            PriceManager.CurrencyRate rate = (PriceManager.CurrencyRate) getChild(groupPosition, 0);
-
-            String baseCurrency = rate.base;
-            String tradeCurrency = rate.trade;
-            String showRate = rate.rate;
-            String headerTitle = "1 " + (xrpBase ? baseCurrency : tradeCurrency);
             if (convertView == null) {
                 LayoutInflater inflater = (LayoutInflater) this._context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 convertView = inflater.inflate(R.layout.list_group, null);
             }
 
-            TextView headerTextLeft = (TextView) convertView.findViewById(R.id.headerTextLeft);
-            TextView headerTextRight = (TextView) convertView.findViewById(R.id.headerTextRight);
-            headerTextLeft.setText(headerTitle);
+            if (groupPosition % 2 == 0) {
+                convertView.setBackgroundColor(0xffe0e0e0);
+            } else {
+                convertView.setBackgroundColor(0xfff4f4f4);
+            }
 
-            String showThisRate = xrpBase ? showRate : String.valueOf(1 / Double.valueOf(showRate));
-            headerTextRight.setText(showThisRate + " " + (xrpBase ? tradeCurrency : baseCurrency));
+            TextView baseTxt = (TextView) convertView.findViewById(R.id.base);
+            TextView tradeTxt = (TextView) convertView.findViewById(R.id.trade);
+            TextView issuerTxt = (TextView) convertView.findViewById(R.id.issuer);
+            TextView trendTxt = (TextView) convertView.findViewById(R.id.trend);
+            TextView rateTxt = (TextView) convertView.findViewById(R.id.rate);
+
+            baseTxt.setText(String.format("1 %s = ", currencyRate.base));
+            tradeTxt.setText(currencyRate.trade);
+            issuerTxt.setText(currencyRate.issuer);
+            trendTxt.setText("^ " + String.format("%.3f", Math.random()) + " %");
+            rateTxt.setText(String.format("%.6f", currencyRate.rate));
+
+//            String showThisRate = xrpBase ? showRate : String.valueOf(1 / Double.valueOf(showRate));
+//            headerTextRight.setText(showThisRate + " " + (xrpBase ? tradeCurrency : baseCurrency));
 
             return convertView;
         }
