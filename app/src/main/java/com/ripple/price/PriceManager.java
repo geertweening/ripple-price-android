@@ -9,17 +9,22 @@ import com.android.volley.VolleyError;
 import com.ripple.price.util.JSONArrayRequest;
 import com.ripple.price.util.Log;
 import com.ripple.price.util.RippleVolley;
+import com.ripple.price.util.Time;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.TimeZone;
 
 /**
  * Created by Geert Weening (geert@ripple.com) on 2/6/14.
@@ -152,10 +157,16 @@ public class PriceManager extends Observable
 
             // { "startTime":"2014-02-24T18:40:30.368Z", "endTime":"2014-02-24T19:40:30.368Z","timeIncrement":"hour","timeMultiple":1,"descending":false,"base":{"currency":"XRP"},"trade":{"currency":"USD","issuer":"rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B"}}
 
+            SimpleDateFormat iso8601 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.US);
+            iso8601.setTimeZone(TimeZone.getTimeZone("GMT"));
+            Date now = new Date();
+            String startTime = iso8601.format(new Date(now.getTime() -  Time.DAY));
+            String endTime = iso8601.format(now);
+
             JSONObject payLoad = new JSONObject();
-            payLoad.put("startTime", "2014-02-23T19:40:30.368Z");
-            payLoad.put("endTime", "2014-02-24T19:40:30.368Z");
-            payLoad.put("timeIncrement","day");
+            payLoad.put("startTime", startTime);
+            payLoad.put("endTime", endTime);
+            payLoad.put("timeIncrement","all");
             payLoad.put("timeMultiple", 1);
             payLoad.put("descending", false);
 
@@ -168,6 +179,8 @@ public class PriceManager extends Observable
 
             payLoad.put("base", base);
             payLoad.put("trade", trade);
+
+            Log.debug("%s", payLoad);
 
             JSONArrayRequest request = new JSONArrayRequest(EXCHANGE_RATES_API, payLoad, new Response.Listener<JSONArray>()
             {
