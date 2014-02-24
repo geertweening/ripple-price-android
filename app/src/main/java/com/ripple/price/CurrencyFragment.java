@@ -45,7 +45,7 @@ public class CurrencyFragment extends Fragment implements Observer
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
     {
-        expandableListView = new ExpandableListView(container.getContext());
+        expandableListView = new ExpandableListView(getActivity());
         return expandableListView;
     }
 
@@ -100,13 +100,6 @@ public class CurrencyFragment extends Fragment implements Observer
                 return false;
             }
         });
-    }
-
-    public void update()
-    {
-        if (currencyExchangeAdapter != null) {
-            currencyExchangeAdapter.notifyDataSetChanged();
-        }
     }
 
     @Override
