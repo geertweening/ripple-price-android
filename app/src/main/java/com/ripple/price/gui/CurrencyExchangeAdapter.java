@@ -9,7 +9,6 @@ import android.widget.TextView;
 
 import com.ripple.price.PriceManager;
 import com.ripple.price.R;
-import com.ripple.price.util.Log;
 
 import java.util.List;
 import java.util.Map;
@@ -20,26 +19,30 @@ import java.util.Map;
 public class CurrencyExchangeAdapter extends BaseExpandableListAdapter
 {
 
-    private Context _context;
-    private List<String> _listDataHeader;
-    private Map<String, List<PriceManager.CurrencyRate>> _listDataChild;
+    private Context context;
+    private List<String> listHeaders;
+    private Map<String, List<PriceManager.CurrencyRate>> listChildren;
 
     private int trendColorGreen;
     private int trendColorRed;
+    private int listGreyLight;
+    private int listGreyDark;
 
     public CurrencyExchangeAdapter(Context context, List<String> listDataHeader, Map<String, List<PriceManager.CurrencyRate>> listChildData)
     {
-        this._context = context;
-        this._listDataHeader = listDataHeader;
-        this._listDataChild = listChildData;
+        this.context = context;
+        this.listHeaders = listDataHeader;
+        this.listChildren = listChildData;
         this.trendColorGreen = context.getResources().getColor(R.color.trend_green);
         this.trendColorRed = context.getResources().getColor(R.color.trend_red);
+        this.listGreyLight = context.getResources().getColor(R.color.list_grey_light);
+        this.listGreyDark = context.getResources().getColor(R.color.list_grey_dark);
     }
 
     @Override
     public Object getChild(int groupPosition, int childPosition)
     {
-        return this._listDataChild.get(_listDataHeader.get(groupPosition)).get(childPosition);
+        return this.listChildren.get(listHeaders.get(groupPosition)).get(childPosition);
     }
 
     @Override
@@ -54,7 +57,7 @@ public class CurrencyExchangeAdapter extends BaseExpandableListAdapter
         final PriceManager.CurrencyRate childRate = (PriceManager.CurrencyRate) getChild(groupPosition, childPosition);
 
         if (convertView == null) {
-            LayoutInflater inflater = (LayoutInflater) this._context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            LayoutInflater inflater = (LayoutInflater) this.context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             convertView = inflater.inflate(R.layout.list_item, null);
         }
 
@@ -71,19 +74,19 @@ public class CurrencyExchangeAdapter extends BaseExpandableListAdapter
     @Override
     public int getChildrenCount(int groupPosition)
     {
-        return _listDataChild.get(this._listDataHeader.get(groupPosition)).size();
+        return listChildren.get(this.listHeaders.get(groupPosition)).size();
     }
 
     @Override
     public Object getGroup(int groupPosition)
     {
-        return this._listDataHeader.get(groupPosition);
+        return this.listHeaders.get(groupPosition);
     }
 
     @Override
     public int getGroupCount()
     {
-        return this._listDataHeader.size();
+        return this.listHeaders.size();
     }
 
     @Override
@@ -97,7 +100,7 @@ public class CurrencyExchangeAdapter extends BaseExpandableListAdapter
     {
         PriceManager.CurrencyRate currencyRate = null;
         Double biggestVolume = Double.MIN_VALUE;
-        for (PriceManager.CurrencyRate rate : this._listDataChild.get(getGroup(groupPosition))) {
+        for (PriceManager.CurrencyRate rate : this.listChildren.get(getGroup(groupPosition))) {
             if (rate.baseVolume > biggestVolume) {
                 biggestVolume = rate.baseVolume;
                 currencyRate = rate;
@@ -105,14 +108,14 @@ public class CurrencyExchangeAdapter extends BaseExpandableListAdapter
         }
 
         if (convertView == null) {
-            LayoutInflater inflater = (LayoutInflater) this._context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            LayoutInflater inflater = (LayoutInflater) this.context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             convertView = inflater.inflate(R.layout.list_group, null);
         }
 
         if (groupPosition % 2 == 0) {
-            convertView.setBackgroundColor(0xffe0e0e0);
+            convertView.setBackgroundColor(listGreyLight);
         } else {
-            convertView.setBackgroundColor(0xfff4f4f4);
+            convertView.setBackgroundColor(listGreyDark);
         }
 
         TextView baseTxt = (TextView) convertView.findViewById(R.id.base);
@@ -129,18 +132,14 @@ public class CurrencyExchangeAdapter extends BaseExpandableListAdapter
 
         // calculate difference between opening and close
         Double diff = currencyRate.close - currencyRate.open;
-        Double perc = diff * (100/currencyRate.open);
+        Double percentage = diff * (100/currencyRate.open);
 
-        String trend = String.valueOf(perc);
-        trend = trend.substring(0, trend.length() < 5 ? trend.length() : 5);
-
-
-        Log.debug("open %s - close %s - diff %s - perc %s - trend %s", currencyRate.open, currencyRate.close, diff, perc, trend);
-
+        String trend = String.valueOf(percentage);
+        trend = trend.substring(0, trend.length() < 6 ? trend.length() : 6);
 
         trendTxt.setText(trend);
-        trendTxt.setText(String.format("%s %s %s", perc < 0 ? "▼" : "▲", trend, "%"));
-        trendTxt.setTextColor(perc < 0 ? trendColorRed : trendColorGreen);
+        trendTxt.setText(String.format("%s %s %s", percentage < 0 ? "▼" : "▲", trend, "%"));
+        trendTxt.setTextColor(percentage < 0 ? trendColorRed : trendColorGreen);
 
         return convertView;
     }
