@@ -34,7 +34,7 @@ public class PriceManager extends Observable
 
     private Context context;
     private Handler bgHandler;
-    private final static String EXCHANGE_RATES_API = "http://ct.ripple.com:5993/api/exchangeRates";
+    private final static String EXCHANGE_RATES_API = "http://api.ripplecharts.com/api/offersExercised/offersExercised";
 
     public static class ExchangeRate
     {
@@ -56,14 +56,18 @@ public class PriceManager extends Observable
         public String base;
         public String trade;
         public String issuer;
-        public Double rate;
+        public Double open;
+        public Double close;
+        public Double baseVolume;
 
-        public CurrencyRate(String base, String trade, String issuer, Double rate)
+        public CurrencyRate(String base, String trade, String issuer, Double open, Double close, Double baseVolume)
         {
             this.base = base;
             this.trade = trade;
             this.issuer = issuer;
-            this.rate = rate;
+            this.open = open;
+            this.close = close;
+            this.baseVolume = baseVolume;
         }
     }
 
@@ -121,7 +125,10 @@ public class PriceManager extends Observable
     private void getExchangeRates()
     {
         for (String currency : CURRENCIES_LIST) {
-            getExchangeRates(currency);
+
+            for (Map.Entry<String, ExchangeRate> entry : exchangeRates.entrySet()) {
+                getExchangeRates(currency, entry.getKey());
+            }
         }
     }
 
@@ -139,23 +146,28 @@ public class PriceManager extends Observable
         notifyObservers();
     }
 
-    private void getExchangeRates(final String currency)
+    private void getExchangeRates(final String currency, final String issuer)
     {
         try {
+
+            // { "startTime":"2014-02-24T18:40:30.368Z", "endTime":"2014-02-24T19:40:30.368Z","timeIncrement":"hour","timeMultiple":1,"descending":false,"base":{"currency":"XRP"},"trade":{"currency":"USD","issuer":"rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B"}}
+
             JSONObject payLoad = new JSONObject();
-            JSONArray currencies = new JSONArray();
-            currencies.put(currency);
-            currencies.put("XRP");
-            payLoad.put("currencies", currencies);
+            payLoad.put("startTime", "2014-02-23T19:40:30.368Z");
+            payLoad.put("endTime", "2014-02-24T19:40:30.368Z");
+            payLoad.put("timeIncrement","day");
+            payLoad.put("timeMultiple", 1);
+            payLoad.put("descending", false);
 
-            JSONArray gateways = new JSONArray();
-            for (Map.Entry<String, ExchangeRate> entry : exchangeRates.entrySet()) {
-                gateways.put(entry.getKey());
-            }
+            JSONObject base = new JSONObject();
+            base.put("currency", "XRP");
 
-            payLoad.put("gateways", gateways);
+            JSONObject trade = new JSONObject();
+            trade.put("currency", currency);
+            trade.put("issuer", issuer);
 
-            Log.debug("exchangeRate %s - %s", currency, gateways);
+            payLoad.put("base", base);
+            payLoad.put("trade", trade);
 
             JSONArrayRequest request = new JSONArrayRequest(EXCHANGE_RATES_API, payLoad, new Response.Listener<JSONArray>()
             {
@@ -164,7 +176,7 @@ public class PriceManager extends Observable
                 {
                     Log.debug("response for %s: %s", currency, jsonObject);
                     try {
-                        addCurrencyRates(currency, jsonObject);
+                        addCurrencyRates(currency, issuer, jsonObject);
                     } catch (JSONException e) {
                         Log.error(e);
                     }
@@ -189,28 +201,38 @@ public class PriceManager extends Observable
 
     }
 
-    private void addCurrencyRates(String currency, JSONArray tradeResponse) throws JSONException
+    private void addCurrencyRates(String currency, String issuer, JSONArray tradeResponse) throws JSONException
     {
         ArrayList<CurrencyRate> rates = new ArrayList<CurrencyRate>();
 
-        for (int i=0; i < tradeResponse.length(); i++) {
-            JSONObject object = tradeResponse.getJSONObject(i);
+        if (tradeResponse.length() < 2) {
+            return;
+        }
 
-            JSONObject base = object.getJSONObject("base");
-            JSONObject trade = object.getJSONObject("trade");
+        JSONArray rate = tradeResponse.getJSONArray(1);
 
-            Double rate = object.getDouble("rate");
+        // "startTime","baseCurrVolume","tradeCurrVolume","numTrades","openPrice","closePrice","highPrice","lowPrice","vwavPrice"
 
-            String baseCurrency = base.getString("currency");
-            String tradeCurrency = trade.getString("currency");
-            String tradeIssuer = exchangeRates.get(trade.getString("issuer")).name;
+        Double baseCurrVolume = rate.getDouble(1);
+        Double tradeCurrVolume = rate.getDouble(2);
+        Double numTrades = rate.getDouble(3);
+        Double openPrice = rate.getDouble(4);
+        Double closePrice = rate.getDouble(5);
+        Double highPrice = rate.getDouble(6);
+        Double lowPrice = rate.getDouble(7);
 
-            if (!baseCurrency.equals(tradeCurrency)) {
-                rates.add(new CurrencyRate(baseCurrency, tradeCurrency, tradeIssuer, rate));
-            }
+        String baseCurrency = "XRP";
+        String tradeCurrency = currency;
+        String tradeIssuer = exchangeRates.get(issuer).name;
+
+        if (!baseCurrency.equals(tradeCurrency)) {
+            rates.add(new CurrencyRate(baseCurrency, tradeCurrency, tradeIssuer, openPrice, closePrice, baseCurrVolume));
         }
 
         if (rates.size() > 0) {
+            if (currencyRates.containsKey(currency)) {
+                rates.addAll(currencyRates.get(currency));
+            }
             currencyRates.put(currency, rates);
             setChanged();
             notifyObservers();

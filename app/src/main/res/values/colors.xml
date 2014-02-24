@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <color name="trend_green">#ff0ec106</color>
+    <color name="trend_red">#ffc74240</color>
+
+</resources>

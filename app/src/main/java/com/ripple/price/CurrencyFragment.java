@@ -26,10 +26,10 @@ import java.util.Observer;
 public class CurrencyFragment extends Fragment implements Observer
 {
 
-    ExpandableListAdapter listAdapter;
-    ExpandableListView expListView;
-    List<String> listDataHeader = new ArrayList<String>();
-    Map<String, List<PriceManager.CurrencyRate>> listDataChild = new HashMap<String, List<PriceManager.CurrencyRate>>();
+    private ExpandableListAdapter listAdapter;
+    private ExpandableListView expListView;
+    private List<String> listDataHeader = new ArrayList<String>();
+    private Map<String, List<PriceManager.CurrencyRate>> listDataChild = new HashMap<String, List<PriceManager.CurrencyRate>>();
 
     public static CurrencyFragment newInstance()
     {
@@ -132,12 +132,20 @@ public class CurrencyFragment extends Fragment implements Observer
                 for (Map.Entry<String, List<PriceManager.CurrencyRate>> entry : currencyRates.entrySet()) {
                     Log.debug("= %s =", entry.getKey());
 
-                    listDataHeader.add(0, entry.getKey());
+                    Double biggestVolume = Double.MIN_VALUE;
+                    String biggestIssuer = null;
 
                     for (PriceManager.CurrencyRate rate : entry.getValue()) {
-                        Log.debug("- %s - %s : %s (%s)", rate.base, rate.trade, rate.issuer, rate.rate);
+                        Log.debug("- %s - %s : %s (%s)", rate.base, rate.trade, rate.issuer, rate.close, rate.baseVolume);
                         listDataChild.put(entry.getKey(), entry.getValue());
+                        if (rate.baseVolume > biggestVolume) {
+                            biggestVolume = rate.baseVolume;
+                            biggestIssuer = entry.getKey();
+                            Log.debug("current biggest %s - %s", rate.baseVolume, entry.getKey());
+                        }
                     }
+
+                    listDataHeader.add(0, biggestIssuer);
                 }
 
                 listAdapter.notifyDataSetChanged();
@@ -162,11 +170,16 @@ public class CurrencyFragment extends Fragment implements Observer
         private List<String> _listDataHeader;
         private Map<String, List<PriceManager.CurrencyRate>> _listDataChild;
 
+        private int trendColorGreen;
+        private int trendColorRed;
+
         public ExpandableListAdapter(Context context, List<String> listDataHeader, Map<String, List<PriceManager.CurrencyRate>> listChildData)
         {
             this._context = context;
             this._listDataHeader = listDataHeader;
             this._listDataChild = listChildData;
+            this.trendColorGreen = context.getResources().getColor(R.color.trend_green);
+            this.trendColorRed = context.getResources().getColor(R.color.trend_red);
         }
 
         @Override
@@ -191,12 +204,13 @@ public class CurrencyFragment extends Fragment implements Observer
                 convertView = inflater.inflate(R.layout.list_item, null);
             }
 
-            TextView txtListChild = (TextView) convertView.findViewById(R.id.textLeft);
+            TextView childIssuer = (TextView) convertView.findViewById(R.id.issuer);
+            TextView childClose = (TextView) convertView.findViewById(R.id.close);
+            TextView childVolume = (TextView) convertView.findViewById(R.id.volume);
 
-            TextView txtListChildRight = (TextView) convertView.findViewById(R.id.textRight);
-
-            txtListChild.setText(childRate.issuer);
-            txtListChildRight.setText(String.format("%.9f", childRate.rate));
+            childIssuer.setText(childRate.issuer);
+            childClose.setText(String.format("%.9f", childRate.close));
+            childVolume.setText(String.format("%.4f", childRate.baseVolume));
             return convertView;
         }
 
@@ -228,7 +242,16 @@ public class CurrencyFragment extends Fragment implements Observer
         public View getGroupView(int groupPosition, boolean isExpanded, View convertView, ViewGroup parent)
         {
             boolean xrpBase = ((MainActivity) _context).getXrpBase() == 0;
-            PriceManager.CurrencyRate currencyRate = (PriceManager.CurrencyRate) getChild(groupPosition, 0);
+
+
+            PriceManager.CurrencyRate currencyRate = null;
+            Double biggestVolume = Double.MIN_VALUE;
+            for (PriceManager.CurrencyRate rate : this._listDataChild.get(getGroup(groupPosition))) {
+                if (rate.baseVolume > biggestVolume) {
+                    biggestVolume = rate.baseVolume;
+                    currencyRate = rate;
+                }
+            }
 
             if (convertView == null) {
                 LayoutInflater inflater = (LayoutInflater) this._context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -250,11 +273,23 @@ public class CurrencyFragment extends Fragment implements Observer
             baseTxt.setText(String.format("1 %s = ", currencyRate.base));
             tradeTxt.setText(currencyRate.trade);
             issuerTxt.setText(currencyRate.issuer);
-            trendTxt.setText("^ " + String.format("%.3f", Math.random()) + " %");
-            rateTxt.setText(String.format("%.6f", currencyRate.rate));
+            rateTxt.setText(String.format("%.6f", currencyRate.close));
 
-//            String showThisRate = xrpBase ? showRate : String.valueOf(1 / Double.valueOf(showRate));
-//            headerTextRight.setText(showThisRate + " " + (xrpBase ? tradeCurrency : baseCurrency));
+
+            // calculate difference between opening and close
+            Double diff = currencyRate.close - currencyRate.open;
+            Double perc = diff * (100/currencyRate.open);
+
+            String trend = String.valueOf(perc);
+            trend = trend.substring(0, trend.length() < 5 ? trend.length() : 5);
+
+
+            Log.debug("open %s - close %s - diff %s - perc %s - trend %s", currencyRate.open, currencyRate.close, diff, perc, trend);
+
+
+            trendTxt.setText(trend);
+            trendTxt.setText(String.format("%s %s %s", perc < 0 ? "▼" : "▲", trend, "%"));
+            trendTxt.setTextColor(perc < 0 ? trendColorRed : trendColorGreen);
 
             return convertView;
         }
