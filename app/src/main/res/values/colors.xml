@@ -4,6 +4,6 @@
     <color name="trend_green">#ff0ec106</color>
     <color name="trend_red">#ffc74240</color>
     <color name="list_grey_light">#ffe9e9e9</color>
-    <color name="list_grey_dark">#ffcccccc</color>
+    <color name="list_grey_dark">#ffe3e3e3</color>
 
 </resources>
